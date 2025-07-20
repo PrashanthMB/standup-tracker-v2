@@ -1,0 +1,93 @@
+{
+  "name": "standup-tracker-copilot",
+  "displayName": "Standup Tracker Copilot Integration",
+  "description": "VS Code extension for daily standup tracking with GitHub Copilot Chat integration",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:standupTracker.submitStandup",
+    "onCommand:standupTracker.viewStatus",
+    "onCommand:standupTracker.chatInterface"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "standupTracker.submitStandup",
+        "title": "Submit Daily Standup",
+        "category": "Standup Tracker"
+      },
+      {
+        "command": "standupTracker.viewStatus",
+        "title": "View Team Status",
+        "category": "Standup Tracker"
+      },
+      {
+        "command": "standupTracker.chatInterface",
+        "title": "Open Standup Chat",
+        "category": "Standup Tracker"
+      },
+      {
+        "command": "standupTracker.viewMetrics",
+        "title": "View Team Metrics",
+        "category": "Standup Tracker"
+      }
+    ],
+    "configuration": {
+      "title": "Standup Tracker",
+      "properties": {
+        "standupTracker.apiEndpoint": {
+          "type": "string",
+          "default": "https://your-api-gateway-url.amazonaws.com/dev",
+          "description": "API endpoint for the standup tracker service"
+        },
+        "standupTracker.teamMemberName": {
+          "type": "string",
+          "default": "",
+          "description": "Your team member name for standup submissions"
+        },
+        "standupTracker.autoSubmit": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically submit standup when VS Code starts"
+        }
+      }
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "standupTracker",
+          "name": "Standup Tracker",
+          "when": "true"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "standup-tracker",
+          "title": "Standup Tracker",
+          "icon": "$(comment-discussion)"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}

@@ -1,0 +1,118 @@
+service: standup-tracker-v2
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${env:AWS_REGION, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  environment:
+    BEDROCK_MODEL_ID: ${env:BEDROCK_MODEL_ID}
+    BEDROCK_REGION: ${env:BEDROCK_REGION}
+    JIRA_BASE_URL: ${env:JIRA_BASE_URL}
+    JIRA_EMAIL: ${env:JIRA_EMAIL}
+    JIRA_API_TOKEN: ${env:JIRA_API_TOKEN}
+    BITBUCKET_WORKSPACE: ${env:BITBUCKET_WORKSPACE}
+    BITBUCKET_USERNAME: ${env:BITBUCKET_USERNAME}
+    BITBUCKET_APP_PASSWORD: ${env:BITBUCKET_APP_PASSWORD}
+    STORAGE_TYPE: ${env:STORAGE_TYPE}
+    S3_BUCKET_NAME: ${env:S3_BUCKET_NAME}
+    S3_REGION: ${env:S3_REGION}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - bedrock:InvokeModel
+        - bedrock:InvokeModelWithResponseStream
+      Resource: "*"
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+        - s3:DeleteObject
+        - s3:ListBucket
+      Resource:
+        - "arn:aws:s3:::${env:S3_BUCKET_NAME}"
+        - "arn:aws:s3:::${env:S3_BUCKET_NAME}/*"
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+      Resource: "*"
+
+functions:
+  standupProcessor:
+    handler: src/handlers/standupHandler.processStandup
+    timeout: 30
+    events:
+      - http:
+          path: /standup
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: standupProcessor
+
+  jiraIntegration:
+    handler: src/handlers/jiraHandler.getTeamMemberTasks
+    timeout: 30
+    events:
+      - http:
+          path: /jira/tasks/{teamMember}
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: jiraIntegration
+
+  bitbucketIntegration:
+    handler: src/handlers/bitbucketHandler.getPRStatus
+    timeout: 30
+    events:
+      - http:
+          path: /bitbucket/prs/{teamMember}
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: bitbucketIntegration
+
+  copilotChatInterface:
+    handler: src/handlers/copilotHandler.handleChatInteraction
+    timeout: 30
+    events:
+      - http:
+          path: /copilot-chat
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: copilotChatInterface
+
+  dataRetrieval:
+    handler: src/handlers/dataHandler.getStandupHistory
+    timeout: 30
+    events:
+      - http:
+          path: /data/history/{teamMember}
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: dataRetrieval
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3000
+    host: 0.0.0.0
+
+resources:
+  Resources:
+    StandupTrackerS3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${env:S3_BUCKET_NAME}
+        VersioningConfiguration:
+          Status: Enabled
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
